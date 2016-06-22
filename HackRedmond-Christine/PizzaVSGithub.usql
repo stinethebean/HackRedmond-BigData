@@ -1,0 +1,41 @@
+﻿REFERENCE ASSEMBLY [Newtonsoft.Json];
+REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats]; 
+
+//Extract the Json string using a default Text extractor. This is ideal if you file size is <128 KB.
+@json = 
+    EXTRACT requester_username string, giver_username_if_known string, requester_received_pizza bool
+    FROM @"adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/pizza_request_dataset.json" 
+    USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
+
+@github = SELECT login 
+        FROM users;
+
+OUTPUT @json
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/pizza.csv"
+USING Outputters.Csv(quoting : false);
+
+OUTPUT @github
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/githubusers.csv"
+USING Outputters.Csv(quoting : false);
+
+@joinedRequestor =
+    SELECT requester_username
+    FROM @json
+         INNER JOIN
+             @github
+         ON login == requester_username;
+
+OUTPUT @joinedRequestor
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/githubVSpizzaRequestor.csv"
+USING Outputters.Csv(quoting : false);
+
+@joinedGiver =
+    SELECT giver_username_if_known
+    FROM @json
+         INNER JOIN
+             @github
+         ON login == giver_username_if_known;
+
+OUTPUT @joinedGiver
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/githubVSpizzaGiver.csv"
+USING Outputters.Csv(quoting : false);
