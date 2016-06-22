@@ -1,4 +1,6 @@
-﻿REFERENCE ASSEMBLY [Newtonsoft.Json];
+﻿USE GHTorrent; 
+
+REFERENCE ASSEMBLY [Newtonsoft.Json];
 REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats]; 
 
 //Extract the Json string using a default Text extractor. This is ideal if you file size is <128 KB.
@@ -7,27 +9,67 @@ REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
     FROM @"adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/pizza_request_dataset.json" 
     USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
 
-@github = SELECT login 
+//get usernames and ID#s
+@github = SELECT login, id
         FROM users;
 
-OUTPUT @json
-TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/pizza.csv"
+//get commits in a table
+@githubCommits =
+    SELECT (int)author_id AS author_id
+    FROM commits
+    WHERE author_id != null;
+
+//join commits list with username
+@joinedCommitsbyID =
+    SELECT author_id, login
+    FROM @githubCommits
+         INNER JOIN
+             @github
+         ON @githubCommits.author_id == id;
+
+//count each time a user commits
+@countedCommitsbyID =
+    SELECT login,
+           COUNT( * ) AS count
+    FROM @joinedCommitsbyID
+    GROUP BY login;
+
+OUTPUT @countedCommitsbyID
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Christine/commitsByUser.csv"
 USING Outputters.Csv(quoting : false);
 
+/*
+OUTPUT @json
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Christine/pizza.csv"
+USING Outputters.Csv(quoting : false);
+*/
+
 OUTPUT @github
-TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/githubusers.csv"
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Christine/githubusers.csv"
 USING Outputters.Csv(quoting : false);
 
 @joinedRequestor =
-    SELECT requester_username
+    SELECT requester_username, requester_received_pizza
     FROM @json
          INNER JOIN
              @github
          ON login == requester_username;
 
 OUTPUT @joinedRequestor
-TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/githubVSpizzaRequestor.csv"
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Christine/githubVSpizzaRequestor.csv"
 USING Outputters.Csv(quoting : false);
+
+@joinedRequesterRecieved =
+    SELECT requester_received_pizza,
+           COUNT( * ) AS count
+    FROM @joinedRequestor
+    GROUP BY requester_received_pizza;
+
+// outputting the list of Users who recieved pizza
+OUTPUT @joinedRequesterRecieved 
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Christine/RequesterRecieved.csv"
+USING Outputters.Csv(quoting : false);
+
 
 @joinedGiver =
     SELECT giver_username_if_known
@@ -37,5 +79,5 @@ USING Outputters.Csv(quoting : false);
          ON login == giver_username_if_known;
 
 OUTPUT @joinedGiver
-TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/githubVSpizzaGiver.csv"
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Christine/githubVSpizzaGiver.csv"
 USING Outputters.Csv(quoting : false);
