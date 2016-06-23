@@ -1,0 +1,33 @@
+﻿USE [GHTorrent];
+
+REFERENCE ASSEMBLY [Newtonsoft.Json];
+REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
+
+
+//Extract the Json string using a default Text extractor. This is ideal if you file size is <128 KB.
+@json = 
+    EXTRACT reviewerName string, asin string, reviewText string, overall string, summary string, unixReviewTime string
+    FROM @"adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Data/Grocery_and_Gourmet_Food_5.json" 
+    USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
+
+@github = SELECT login.Trim() AS login
+        FROM users;
+
+@joined =
+    SELECT reviewerName, asin, reviewText, overall, summary, unixReviewTime
+    FROM @json
+         INNER JOIN
+             @github
+         ON login == reviewerName;
+
+@joinedCount =
+    SELECT reviewerName,
+           COUNT( * ) AS reviewCount, 
+           AVG(Double.Parse(overall)) AS avgReviewScore
+    FROM @joined
+    GROUP BY reviewerName;
+           
+           
+OUTPUT @joinedCount
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Andrew/JoinedCountofReview"
+USING Outputters.Csv(quoting : true);
