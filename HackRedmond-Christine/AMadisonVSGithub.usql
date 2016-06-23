@@ -1,0 +1,62 @@
+﻿USE DATABASE [GHTorrent];
+
+USE DATABASE [GHTorrent];
+
+USE GHTorrent;
+
+@cheaters =
+    EXTRACT id int,
+            email string,
+            isvalid int,
+            col3 int,
+            col4 int,
+            col5 int,
+            col6 int,
+            col7 int,
+            col8 int
+    FROM @"adl://datamartadls.azuredatalakestore.net/AMadisonEmails/amadisonemails.csv"
+    USING Extractors.Csv();
+
+//get usernames 
+@github =
+    SELECT *
+    FROM users WHERE !String.IsNullOrWhiteSpace(email);
+
+//get commits in a table
+@githubCommits =
+    SELECT (int)author_id AS author_id
+    FROM commits
+    WHERE author_id != null;
+
+//join commits list with username
+@joinedCommitsbyID =
+    SELECT author_id, login
+    FROM @githubCommits
+         INNER JOIN
+             @github
+         ON @githubCommits.author_id == id;
+
+//count each time a user commits
+@countedCommitsbyID =
+    SELECT login,
+           COUNT( * ) AS count
+    FROM @joinedCommitsbyID
+    GROUP BY login;
+
+@joinedCommitsbyEmail =
+    SELECT @github.login, email, count
+    FROM @github
+         INNER JOIN
+            @countedCommitsbyID
+         ON @github.login == @countedCommitsbyID.login
+         WHERE @countedCommitsbyID.count >= 1;
+
+@joined =
+    SELECT DISTINCT @joinedCommitsbyEmail.email, login, count
+    FROM @joinedCommitsbyEmail
+         INNER JOIN
+             @cheaters
+         ON @joinedCommitsbyEmail.email == @cheaters.email
+    WHERE @cheaters.isvalid == 1;
+         
+OUTPUT @joined TO "githubCheatersValidatedActive" USING Outputters.Csv();
