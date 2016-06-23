@@ -3,4 +3,16 @@
   <PropertyGroup>
     <StartFile>PizzaVSGithub.usql</StartFile>
   </PropertyGroup>
+  <ItemGroup>
+    <ScriptUserData Include="PizzaVSGithub.usql">
+      <Parallelism>6</Parallelism>
+      <UseLocalComputeAccount>false</UseLocalComputeAccount>
+      <LocalComputeAccount>LocalCA:localcomputeaccount</LocalComputeAccount>
+      <LocalDatabase>master</LocalDatabase>
+      <LocalSchema>dbo</LocalSchema>
+      <ClusterComputeAccount>DataLakeCA:datamartadla</ClusterComputeAccount>
+      <ClusterDatabase>GHTorrent</ClusterDatabase>
+      <ClusterSchema>dbo</ClusterSchema>
+    </ScriptUserData>
+  </ItemGroup>
 </Project>

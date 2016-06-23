@@ -34,6 +34,7 @@ REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
     FROM @joinedCommitsbyID
     GROUP BY login;
 
+
 OUTPUT @countedCommitsbyID
 TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Christine/commitsByUser.csv"
 USING Outputters.Csv(quoting : false);
@@ -54,7 +55,7 @@ USING Outputters.Csv(quoting : false);
          INNER JOIN
              @github
          ON login == requester_username;
-
+//requester of Pizza is on GitHub
 OUTPUT @joinedRequestor
 TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Christine/githubVSpizzaRequestor.csv"
 USING Outputters.Csv(quoting : false);
@@ -80,4 +81,19 @@ USING Outputters.Csv(quoting : false);
 
 OUTPUT @joinedGiver
 TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Christine/githubVSpizzaGiver.csv"
+USING Outputters.Csv(quoting : false);
+
+
+//getting requester data vs comments
+@joinedPizzaAndComments =
+    SELECT requester_username, requester_received_pizza
+    FROM @json
+         JOIN
+             @countedCommitsbyID
+         ON login == requester_username;
+
+
+//requester of Pizza is on GitHub
+OUTPUT @joinedPizzaAndComments
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Christine/PizzaRequestvsComment.csv"
 USING Outputters.Csv(quoting : false);
