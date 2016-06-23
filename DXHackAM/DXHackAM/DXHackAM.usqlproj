@@ -22,12 +22,16 @@
     <OutputPath>bin\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Script Include="githubVSAmazon.usql" />
     <Script Include="Script.usql">
       <UseLocalComputeAccount>true</UseLocalComputeAccount>
       <LocalComputeAccount>localcomputeaccount</LocalComputeAccount>
       <LocalDatabase>master</LocalDatabase>
       <LocalSchema>dbo</LocalSchema>
     </Script>
+    <ScriptCode Include="githubVSAmazon.usql.cs">
+      <DependentUpon>githubVSAmazon.usql</DependentUpon>
+    </ScriptCode>
     <ScriptCode Include="Script.usql.cs">
       <DependentUpon>Script.usql</DependentUpon>
     </ScriptCode>

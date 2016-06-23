@@ -10,7 +10,7 @@ REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
     FROM @"adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Data/Grocery_and_Gourmet_Food_5.json" 
     USING new Microsoft.Analytics.Samples.Formats.Json.JsonExtractor();
 
-@github = SELECT login.Trim() AS login
+@github = SELECT login.Trim() AS login, id
         FROM users;
 
 @joined =
@@ -26,8 +26,37 @@ REFERENCE ASSEMBLY [Microsoft.Analytics.Samples.Formats];
            AVG(Double.Parse(overall)) AS avgReviewScore
     FROM @joined
     GROUP BY reviewerName;
-           
-           
-OUTPUT @joinedCount
-TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Andrew/JoinedCountofReview"
-USING Outputters.Csv(quoting : true);
+
+
+@commitsNotNull = 
+    SELECT (int)author_id AS author_id
+    FROM commits
+    WHERE author_id != null;
+
+//getting number of commits per reviewer 
+@joinedCommitsCount =
+    SELECT login, COUNT(*) AS commitCount
+    FROM @commitsNotNull
+         INNER JOIN
+             @github
+         ON @github.id == author_id
+    WHERE author_id != null
+    GROUP BY login;
+
+
+@joinedSummary =
+    SELECT @joinedCount.*, commitCount, reviewText
+    FROM @joinedCount
+        INNER JOIN
+            @joinedCommitsCount
+        ON @joinedCount.reviewerName == @joinedCommitsCount.login
+            INNER JOIN
+            @joined
+        ON @joined.reviewerName == @joinedCommitsCount.login;
+          
+
+OUTPUT @joinedSummary
+TO "adl://datamartadls.azuredatalakestore.net/BigData-HackRedmond/Andrew/joinedSummaryv2"
+ORDER BY commitCount DESC
+USING Outputters.Csv(quoting : false);
+

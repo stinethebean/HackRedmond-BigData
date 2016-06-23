@@ -1,10 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <StartFile>Script.usql</StartFile>
+    <StartFile>githubVSAmazon.usql</StartFile>
   </PropertyGroup>
   <ItemGroup>
-    <ScriptUserData Include="Script.usql">
+    <ScriptUserData Include="githubVSAmazon.usql">
+      <Parallelism>5</Parallelism>
       <UseLocalComputeAccount>false</UseLocalComputeAccount>
       <LocalComputeAccount>LocalCA:localcomputeaccount</LocalComputeAccount>
       <LocalDatabase>master</LocalDatabase>
@@ -12,7 +13,6 @@
       <ClusterComputeAccount>DataLakeCA:datamartadla</ClusterComputeAccount>
       <ClusterDatabase>GHTorrent</ClusterDatabase>
       <ClusterSchema>dbo</ClusterSchema>
-      <Parallelism>5</Parallelism>
     </ScriptUserData>
   </ItemGroup>
 </Project>
